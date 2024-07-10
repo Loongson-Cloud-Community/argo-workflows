@@ -3,7 +3,7 @@ ARG GIT_COMMIT=unknown
 ARG GIT_TAG=unknown
 ARG GIT_TREE_STATE=unknown
 
-FROM golang:1.20-alpine3.16 as builder
+FROM cr.loongnix.cn/library/golang:1.20-alpine as builder
 
 RUN apk update && apk add --no-cache \
     git \
@@ -24,9 +24,11 @@ COPY . .
 
 ####################################################################################################
 
-FROM node:16-alpine as argo-ui
+FROM cr.loongnix.cn/library/node:16.20 as argo-ui
 
-RUN apk update && apk add --no-cache git
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y git
 
 COPY ui/package.json ui/yarn.lock ui/
 
@@ -76,7 +78,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 ####################################################################################################
 
-FROM gcr.io/distroless/static as argoexec
+FROM cr.loongnix.cn/library/alpine:3.11 as argoexec
 
 COPY --from=argoexec-build /go/src/github.com/argoproj/argo-workflows/dist/argoexec /bin/
 COPY --from=argoexec-build /etc/mime.types /etc/mime.types
@@ -87,7 +89,7 @@ ENTRYPOINT [ "argoexec" ]
 
 ####################################################################################################
 
-FROM gcr.io/distroless/static as workflow-controller
+FROM cr.loongnix.cn/library/alpine:3.11 as workflow-controller
 
 USER 8737
 
@@ -99,7 +101,7 @@ ENTRYPOINT [ "workflow-controller" ]
 
 ####################################################################################################
 
-FROM gcr.io/distroless/static as argocli
+FROM cr.loongnix.cn/library/alpine:3.11 as argocli
 
 USER 8737
 
